@@ -15,12 +15,8 @@ pipeline {
                         checkout scm
                         sh 'chmod +x ./mvnw'
 
-                        // Unset Maven-related env vars first
-                        sh 'unset MAVEN_CONFIG || true'
-                        sh 'unset MAVEN_OPTS || true'
-
-                        // Then run build separately
-                        sh './mvnw clean package'
+                        // Unset Maven-related env vars first// Then run build separately
+                        sh 'unset MAVEN_CONFIG MAVEN_OPTS && ./mvnw clean package'
 
                         // Build Docker image
                         sh "docker build -t ${DOCKER_IMAGE} ."
