@@ -1,10 +1,5 @@
 pipeline {
-    agent {
-        docker {
-             image 'maven:3.9.9-eclipse-temurin-21'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
-    }
+    agent any
 
     environment {
         DOCKER_IMAGE = 'jada-stress-service:latest'
@@ -17,22 +12,20 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                sh './mvnw test'
-            }
-        }
-
-        stage('Package') {
-            steps {
-                sh './mvnw clean package -DskipTests'
-            }
-        }
-
-        stage('Docker Build') {
+        stage('Build and Test') {
             steps {
                 script {
-                    docker.build("${DOCKER_IMAGE}")
+                    docker.image('maven:3.9.9-eclipse-temurin-21').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
+                        sh './mvnw clean package'
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
