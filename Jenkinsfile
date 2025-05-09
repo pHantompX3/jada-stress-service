@@ -3,6 +3,9 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'jada-stress-service:latest'
+        CONTAINER_NAME = 'jada-app'
+        HOST_PORT = '8081'
+        CONTAINER_PORT = '8080'
     }
 
     stages {
@@ -21,6 +24,21 @@ pipeline {
 
                     // Build Docker image outside container
                     sh "docker build -t ${DOCKER_IMAGE} ."
+                }
+            }
+        }
+        stage('Deploy App Container') {
+            steps {
+                script {
+                    // Stop and remove old container if it exists
+                    sh "docker rm -f ${CONTAINER_NAME} || true"
+
+                    // Run new container on host
+                    sh """
+                        docker run -d --name ${CONTAINER_NAME} \
+                        -p ${HOST_PORT}:${CONTAINER_PORT} \
+                        ${DOCKER_IMAGE}
+                    """
                 }
             }
         }
