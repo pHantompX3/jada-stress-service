@@ -2,11 +2,11 @@ pipeline {
     agent any
 
     triggers {
-        pollSCM('H/2 * * * *') // Poll every 2 minutes (adjust as needed)
+        pollSCM('H/2 * * * *') // Poll every 2 minutes
     }
 
     environment {
-        DOCKER_IMAGE = 'jada-stress-service:latest'
+        DOCKER_IMAGE_BASE = 'jada-stress-service'
         CONTAINER_NAME = 'jada-app'
         HOST_PORT = '8081'
         CONTAINER_PORT = '8080'
@@ -22,26 +22,43 @@ pipeline {
                         checkout scm
                         sh 'chmod +x ./mvnw'
 
-                        // Properly unset Maven-related vars and run build
+                        // Extract version from pom.xml
+                        def appVersion = sh(
+                            script: "./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout",
+                            returnStdout: true
+                        ).trim()
+                        env.APP_VERSION = appVersion
+
+                        // Run build
                         sh 'unset MAVEN_CONFIG MAVEN_OPTS && ./mvnw clean package'
                     }
 
-                    // Build Docker image outside container
-                    sh "docker build -t ${DOCKER_IMAGE} ."
+                    // Copy the built JAR to a consistent name
+                    sh '''
+                        JAR_NAME=$(ls target/*.jar | grep -v original | head -n 1)
+                        cp "$JAR_NAME" target/app.jar
+                    '''
+
+                    // Build Docker image with version tag and latest
+                    sh """
+                        docker build -t ${DOCKER_IMAGE_BASE}:latest \
+                                     -t ${DOCKER_IMAGE_BASE}:${APP_VERSION} .
+                    """
                 }
             }
         }
+
         stage('Deploy App Container') {
             steps {
                 script {
                     // Stop and remove old container if it exists
                     sh "docker rm -f ${CONTAINER_NAME} || true"
 
-                    // Run new container on host
+                    // Run new container using versioned image
                     sh """
                         docker run -d --name ${CONTAINER_NAME} \
                         -p ${HOST_PORT}:${CONTAINER_PORT} \
-                        ${DOCKER_IMAGE}
+                        ${DOCKER_IMAGE_BASE}:${APP_VERSION}
                     """
                 }
             }
