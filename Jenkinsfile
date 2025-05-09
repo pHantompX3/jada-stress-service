@@ -17,9 +17,10 @@ pipeline {
                         withEnv(['MAVEN_CONFIG=', 'MAVEN_OPTS=']) {
                             sh 'unset MAVEN_CONFIG MAVEN_OPTS && ./mvnw clean package'
                         }
-
-                        sh "docker build -t ${DOCKER_IMAGE} ."
                     }
+
+                    // Now run Docker build on the host where Docker is available
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
