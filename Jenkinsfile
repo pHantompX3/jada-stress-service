@@ -24,7 +24,7 @@ pipeline {
 
                         // Extract version from pom.xml
                         def appVersion = sh(
-                            script: "./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout",
+                            script: "unset MAVEN_CONFIG MAVEN_OPTS && ./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout",
                             returnStdout: true
                         ).trim()
                         env.APP_VERSION = appVersion
