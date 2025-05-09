@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    triggers {
+        pollSCM('H/2 * * * *') // Poll every 2 minutes (adjust as needed)
+    }
+
     environment {
         DOCKER_IMAGE = 'jada-stress-service:latest'
         CONTAINER_NAME = 'jada-app'
