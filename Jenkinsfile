@@ -12,6 +12,7 @@ pipeline {
                     docker.image('maven:3.9.9-eclipse-temurin-21').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
                         // SCM checkout and build happen *inside* the container
                         checkout scm
+                        sh ' chmod +x ./mvnw'
                         sh './mvnw clean package'
                         sh "docker build -t ${DOCKER_IMAGE} ."
                     }
