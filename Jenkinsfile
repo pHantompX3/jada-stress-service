@@ -10,13 +10,14 @@ pipeline {
             steps {
                 script {
                     docker.image('maven:3.9.9-eclipse-temurin-21').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
+                        checkout scm
                         sh 'chmod +x ./mvnw'
-                        sh 'echo MAVEN_OPTS=$MAVEN_OPTS'
-                        sh 'echo MAVEN_CONFIG=$MAVEN_CONFIG'
 
-                        withEnv(["MAVEN_OPTS=", "MAVEN_CONFIG="]) {
-                            sh './mvnw clean package'
+                        // Unset problematic env vars entirely
+                        withEnv(['MAVEN_CONFIG=', 'MAVEN_OPTS=']) {
+                            sh 'unset MAVEN_CONFIG MAVEN_OPTS && ./mvnw clean package'
                         }
+
                         sh "docker build -t ${DOCKER_IMAGE} ."
                     }
                 }
