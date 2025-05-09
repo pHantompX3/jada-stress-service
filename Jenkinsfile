@@ -6,26 +6,15 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
-        stage('Build and Test') {
+        stage('Build and Test in Docker') {
             steps {
                 script {
                     docker.image('maven:3.9.9-eclipse-temurin-21').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
+                        // SCM checkout and build happen *inside* the container
+                        checkout scm
                         sh './mvnw clean package'
+                        sh "docker build -t ${DOCKER_IMAGE} ."
                     }
-                }
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
